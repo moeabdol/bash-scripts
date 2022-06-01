@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+function send_notification() {
+	volume=$(pulsemixer --get-volume)
+	dunstify -a "change-volume" -u low -r "9993" -h int:value:"$volume" -i "$HOME/.config/dunst/volume-$1.svg" "Volume: ${volume}%" -t 2000
+}
+
+case $1 in
+	up)
+		pulsemixer --change-volume +10
+		send_notification $1
+		;;
+	down)
+		pulsemixer --change-volume -10
+		send_notification $1
+		;;
+	mute)
+		if [ $(pulsemixer --get-mute) == 0 ]; then
+			pulsemixer --mute
+			dunstify -i "$HOME/.config/dunst/volume-mute.svg" -a "change-volume" -t 2000 -r 9993 -u low "Muted" -h int:value:0
+		else
+			pulsemixer --unmute
+			send_notification up
+		fi
+		;;
+esac
