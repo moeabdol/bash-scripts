@@ -109,6 +109,7 @@ cd /home/moeabdol
 echo "Installing yay packages"
 sleep 3
 yay -S \
+	clight \
 	lf-bin \
 	nerd-fonts-complete \
 	timeshift-autosnap \
