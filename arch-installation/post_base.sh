@@ -49,7 +49,6 @@ sudo pacman -S \
 	timidity \
 	tmux \
 	unzip \
-	urlview \
 	wget \
 	xclip \
 	xorg \
@@ -114,6 +113,7 @@ yay -S \
 	nerd-fonts-complete \
 	timeshift-autosnap \
 	timeshift-bin \
+	urlview \
 	zramd
 
 # services
