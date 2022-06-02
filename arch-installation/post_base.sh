@@ -39,6 +39,7 @@ sudo pacman -S \
 	neofetch \
 	neomutt \
 	notmuch \
+	pass \
 	pdfjs \
 	python-pip \
 	python-pygments \
