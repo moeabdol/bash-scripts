@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+cd /home/moeabdol
 echo "Starting post-base installation..."
 sleep 3
 
@@ -41,6 +42,7 @@ sudo pacman -S \
 	notmuch \
 	pass \
 	pdfjs \
+	python \
 	python-pip \
 	python-pygments \
 	qutebrowser \
