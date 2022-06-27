@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+cd /home/moeabdol
 echo "Starting post-base installation..."
 sleep 3
 
@@ -39,7 +40,9 @@ sudo pacman -S \
 	neofetch \
 	neomutt \
 	notmuch \
+	pass \
 	pdfjs \
+	python \
 	python-pip \
 	python-pygments \
 	qutebrowser \
@@ -49,7 +52,6 @@ sudo pacman -S \
 	timidity \
 	tmux \
 	unzip \
-	urlview \
 	wget \
 	xclip \
 	xorg \
@@ -109,10 +111,12 @@ cd /home/moeabdol
 echo "Installing yay packages"
 sleep 3
 yay -S \
+	clight \
 	lf-bin \
 	nerd-fonts-complete \
 	timeshift-autosnap \
 	timeshift-bin \
+	urlview \
 	zramd
 
 # services
