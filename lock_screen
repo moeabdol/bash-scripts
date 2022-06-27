@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+mkdir -p $HOME/.cache/lock-screen
+
+timestamp=$(date +"%s")
+image="$HOME/.cache/lock-screen/screen_$timestamp.png"
+import -window root $image
+magick $image -gaussian-blur 10x5 $image
+i3lock -i $image
+
+rm -rf $HOME/.cache/lock-screen/*
