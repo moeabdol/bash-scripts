@@ -51,6 +51,7 @@ sudo pacman -S \
 	sxhkd \
 	timidity \
 	tmux \
+	unclutter \
 	unzip \
 	wget \
 	xclip \
