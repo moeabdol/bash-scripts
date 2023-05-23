@@ -10,7 +10,7 @@ ln -sf /usr/share/zoneinfo/Asia/Riyadh /etc/localtime
 hwclock --systohc
 
 # locale
-echo "Configuring localse"
+echo "Configuring locale"
 sleep 3
 sed -i "62s/.//" /etc/locale.gen
 sed -i "178s/.//" /etc/locale.gen
@@ -67,10 +67,10 @@ pacman -S \
 	xdg-utils
 
 # nvidia
-#pacman -S \
-#	nvidia \
-#	nvidia-utils \
-#	nvidia-settings
+pacman -S \
+	nvidia \
+	nvidia-utils \
+	nvidia-settings
 
 # services
 echo "Enabling systemd services"
