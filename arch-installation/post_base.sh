@@ -126,6 +126,7 @@ yay -S \
 	urlview \
 	zramd \
 	brave-bin \
+	cheat \
 	ttf-ubuntu-arabic \
 	ttf-arabeyes-fonts
 
