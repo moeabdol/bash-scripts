@@ -41,6 +41,7 @@ sudo pacman -S \
 	neomutt \
 	notmuch \
 	pass \
+	pass-otp \
 	pdfjs \
 	python \
 	python-pip \
@@ -48,6 +49,8 @@ sudo pacman -S \
 	qutebrowser \
 	ripgrep \
 	rofi \
+	rofi-emoji \
+	rofi-calc \
 	sxhkd \
 	timidity \
 	tmux \
@@ -56,13 +59,16 @@ sudo pacman -S \
 	wget \
 	xclip \
 	xorg \
+	xorg-xinit \
 	xorg-xev \
 	xsel \
 	yt-dlp \
 	zathura \
 	zathura-djvu \
 	zathura-pdf-mupdf \
-	zathura-ps
+	zathura-ps \
+	ttf-terminus-nerd \
+	xdotool
 
 # pip packages
 echo "Installing python packages"
@@ -118,7 +124,10 @@ yay -S \
 	timeshift-autosnap \
 	timeshift-bin \
 	urlview \
-	zramd
+	zramd \
+	brave-bin \
+	ttf-ubuntu-arabic \
+	ttf-arabeyes-fonts
 
 # services
 echo "Enabling services"
