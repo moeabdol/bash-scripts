@@ -30,6 +30,7 @@ sudo pacman -S \
 	htop \
 	i3-wm \
 	i3status \
+	i3lock \
 	isync \
 	lynx \
 	mpd \
