@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+main() {
+	dict "$1"
+}
+
+main "$@"

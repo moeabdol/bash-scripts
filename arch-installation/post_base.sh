@@ -69,7 +69,8 @@ sudo pacman -S \
 	zathura-pdf-mupdf \
 	zathura-ps \
 	ttf-terminus-nerd \
-	xdotool
+	xdotool \
+	noto-fonts-emoji
 
 # pip packages
 echo "Installing python packages"

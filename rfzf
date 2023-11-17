@@ -19,5 +19,5 @@ IFS=: read -ra selected < <(
 			--preview 'bat {1} --highlight-line {2}' \
 			--preview-window 'right,50%,+{2}+4/4,~4'
 )
-# [ -n "${selected[0]}" ] && vim "${selected[0]}" "+${selected[1]}"
+[ -n "${selected[0]}" ] && vim "${selected[0]}" "+${selected[1]}"
 inject $selected
