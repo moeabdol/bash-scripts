@@ -21,6 +21,7 @@ sudo pacman -S \
 	curl \
 	duf \
 	dunst \
+	libnotify \
 	exa \
 	fd \
 	feh \
