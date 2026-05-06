@@ -12,7 +12,11 @@ mkdir -p "$(dirname "$output")"
 ffmpeg \
 	-f pulse -i bluez_output.40_72_18_42_43_8C.1.monitor \
 	-f pulse -i alsa_input.usb-RODE_Microphones_RODE_NT-USB-00.analog-stereo \
-	-filter_complex "[0:a][1:a]amix=inputs=2:duration=longest:dropout_transition=0[a]" \
+	-filter_complex "
+	  [1:a]asplit=2[mic1][mic2];
+	  [0:a][mic1]sidechaincompress=threshold=0.05:ratio=8:attack=5:release=300[ducked];
+	  [ducked][mic2]amix=inputs=2:duration=longest:normalize=0[a]
+	" \
 	-map "[a]" -ar 48000 -c:a libmp3lame -b:a 192k \
 	"$output"
 
