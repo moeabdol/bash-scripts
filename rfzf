@@ -8,16 +8,16 @@ INITIAL_QUERY="${*:-}"
 IFS=: read -ra selected < <(
 	FZF_DEFAULT_COMMAND="$RG_PREFIX $(printf %q "$INITIAL_QUERY")" \
 		fzf --ansi \
-			--color "hl:-1:underline,hl+:-1:underline:reverse" \
-			--disabled --query "$INITIAL_QUERY" \
-			--bind "change:reload:sleep 0.1; $RG_PREFIX {q} || true" \
-			--prompt "Rg> " \
-			--delimiter : \
-			--info inline \
-			--height 50% \
-			--layout reverse \
-			--preview 'bat {1} --highlight-line {2}' \
-			--preview-window 'right,50%,+{2}+4/4,~4'
+		--color "hl:-1:underline,hl+:-1:underline:reverse" \
+		--disabled --query "$INITIAL_QUERY" \
+		--bind "change:reload:sleep 0.1; $RG_PREFIX {q} || true" \
+		--prompt "Rg> " \
+		--delimiter : \
+		--info inline \
+		--height 50% \
+		--layout reverse \
+		--preview 'bat {1} --highlight-line {2}' \
+		--preview-window 'right,50%,+{2}+4/4,~4'
 )
-[ -n "${selected[0]}" ] && vim "${selected[0]}" "+${selected[1]}"
+[ -n "${selected[0]}" ] && "${EDITOR:-nvim}" "${selected[0]}" "+${selected[1]}"
 inject $selected
