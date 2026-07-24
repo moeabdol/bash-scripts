@@ -1,23 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Default: ~/recordings/meeting-YYYY-MM-DD_HH-MM-SS.mp3
 default_dir="$HOME/recordings"
-default_name="meeting-$(date +%Y-%m-%d_%H-%M-%S).mp3"
+default_name="recording_$(date +%Y-%m-%d_%H-%M-%S).mp3"
 output="${1:-$default_dir/$default_name}"
 
-# Make sure the directory exists
+system_source="bluez_output.2C_41_A1_6C_BD_F2.1.monitor"
+mic_source="alsa_input.usb-RODE_Microphones_RODE_NT-USB-00.analog-stereo"
+
 mkdir -p "$(dirname "$output")"
 
+# Fail loudly if the system source isn't connected.
+if ! pactl list sources short | grep -q "$system_source"; then
+	echo "System source not found." >&2
+	pactl list sources short >&2
+	exit 1
+fi
+
+echo "Recording to $output"
+echo "Press 'q' to stop."
 ffmpeg \
-	-f pulse -i bluez_output.40_72_18_42_43_8C.1.monitor \
-	-f pulse -i alsa_input.usb-RODE_Microphones_RODE_NT-USB-00.analog-stereo \
-	-filter_complex "
-	  [1:a]asplit=2[mic1][mic2];
-	  [0:a][mic1]sidechaincompress=threshold=0.05:ratio=8:attack=5:release=300[ducked];
-	  [ducked][mic2]amix=inputs=2:duration=longest:normalize=0[a]
-	" \
+	-f pulse -i "$system_source" \
+	-f pulse -i "$mic_source" \
+	-filter_complex "[0:a]volume=0.7[sys];[1:a]volume=2.0[mic];[sys][mic]amix=inputs=2:duration=longest:normalize=0[a]" \
 	-map "[a]" -ar 48000 -c:a libmp3lame -b:a 192k \
 	"$output"
 
-echo "Saved to: $output"
+echo "Saved: $output"

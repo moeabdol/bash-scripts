@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+whisper_model="$HOME/.local/share/whisper-models/ggml-large-v3-turbo.bin"
+language="${LANG_OVERRIDE:-auto}"
+
+if [[ $# -lt 1 ]]; then
+	echo "Usage: transcribe <audio-file> [output-prefix]" >&2
+	exit 1
+fi
+
+input="$1"
+[[ -f "$input" ]] || {
+	echo "File not found: $input" >&2
+	exit 1
+}
+[[ -f "$whisper_model" ]] || {
+	echo "Model not found: $whisper_model" >&2
+	exit 1
+}
+
+base="${2:-${input%.*}}"
+
+# Whisper wants 16 kHz mono PCM. Use a temp file we always clean up.
+wav="$(mktemp --suffix=.wav)"
+trap 'rm -f "$wav"' EXIT
+
+ffmpeg -i "$input" -ar 16000 -ac 1 -c:a pcm_s16le "$wav" -y -loglevel error
+
+whisper-cli \
+	-m "$whisper_model" \
+	-f "$wav" \
+	-l "$language" \
+	-otxt -osrt \
+	-of "$base" \
+	-t "$(nproc)"
+
+echo "Transcript: ${base}.txt"
+echo "Subtitle: ${base}.srt"

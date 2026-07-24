@@ -1,0 +1,40 @@
+#!/bin/sh
+# rofi-dict — dictionary popup
+# Select a word anywhere and hit the hotkey, or run with nothing selected to type a word.
+# Selecting a suggestion line in the results re-runs the lookup on that word.
+
+word=$(xclip -o -selection primary 2>/dev/null | tr -d '\n' | awk '{print tolower($1)}' | tr -dc 'a-z-')
+[ -z "$word" ] && word=$(rofi -dmenu -l 0 -p "define" | tr '[:upper:]' '[:lower:]' | tr -dc 'a-z-')
+[ -z "$word" ] && exit 0
+
+def=$(timeout 5 dict "$word" 2>&1)
+[ -z "$def" ] && def="(no response from dict — is dictd running?)"
+
+case $def in
+*"No definitions found"*)
+	# naive stemming: strip common suffixes, retry once
+	stem=$(printf '%s' "$word" | sed 's/ies$/y/;s/s$//;s/ed$//;s/ing$//')
+	if [ "$stem" != "$word" ]; then
+		def2=$(timeout 5 dict "$stem" 2>&1)
+		case $def2 in
+		*"No definitions found"*) : ;; # stem no better, keep original suggestions
+		*) def=$def2 ;;
+		esac
+	fi
+	;;
+esac
+
+pick=$(printf '%s\n' "$def" | rofi -dmenu -i -p "📖 $word" \
+	-mesg "Esc closes · Enter on a suggestion looks it up" \
+	-theme-str 'window {width: 55%;} listview {lines: 20;}
+                element-text {font: "monospace 10";}
+                element.alternate.normal {background-color: transparent;}
+                element.selected.normal {border: 0;}')
+
+# If the user picked a line, chase the first word-looking token on it,
+# unless it's the word we just looked up.
+[ -n "$pick" ] || exit 0
+w2=$(printf '%s' "$pick" | tr '[:upper:]' '[:lower:]' | grep -oE '[a-z][a-z-]+' | head -1)
+[ -n "$w2" ] && [ "$w2" != "$word" ] || exit 0
+printf '%s' "$w2" | xclip -selection primary
+exec "$0"
