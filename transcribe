@@ -2,6 +2,7 @@
 set -euo pipefail
 
 whisper_model="$HOME/.local/share/whisper-models/ggml-large-v3-turbo.bin"
+vad_model="$HOME/.local/share/whisper-models/ggml-silero-v5.1.2.bin"
 language="${LANG_OVERRIDE:-auto}"
 
 if [[ $# -lt 1 ]]; then
@@ -31,6 +32,8 @@ whisper-cli \
 	-m "$whisper_model" \
 	-f "$wav" \
 	-l "$language" \
+	--vad \
+	-vm "$vad_model" \
 	-otxt -osrt \
 	-of "$base" \
 	-t "$(nproc)"
