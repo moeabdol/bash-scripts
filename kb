@@ -83,7 +83,7 @@ findall)
 	livegrep "" "$@"
 	;;
 inbox)
-	ls -1t "$KB/inbox"
+	ls -1 "$KB/inbox"
 	;;
 links)
 	[[ $# -gt 0 ]] || usage
