@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# kb — plain-markdown zettelkasten + todo + MoMs, in ~/Dropbox/kb
+# Layout:
+#   $KB/todo.md    single todo file
+#   $KB/inbox/     fleeting captures, unprocessed
+#   $KB/notes/     permanent atomic notes (flat, ID-prefixed)
+#   $KB/mom/       minutes of meeting, write-once records
+#   $KB/projects/  working files per active project
+#   $KB/archive/   finished/dead material (excluded from `kb find`)
+
+KB="${KB_DIR:-$HOME/Dropbox/kb}"
+
+slug() {
+	# lowercase ASCII, spaces/slashes -> dashes; Arabic and other UTF-8 pass through
+	echo "$*" | tr '[:upper:]' '[:lower:]' | tr -s ' /' '-' | sed 's/^-//; s/-$//'
+}
+
+usage() {
+	cat <<EOF
+Usage: kb <command> [args]
+
+  in <title words>     capture fleeting note to inbox/
+  new <title words>    create permanent note in notes/
+  mom <title words>    create minutes-of-meeting record in mom/
+  find [query]         live-grep the kb (archive excluded), open at match
+  findall [query]      same, but include archive/
+  inbox                list unprocessed inbox files (newest first)
+  links <id>           notes linking TO the given note id (backlinks)
+  todo                 open todo.md
+  t <task words>       append a task to todo.md
+EOF
+	exit 1
+}
+
+livegrep() {
+	# $1 = extra rg args (e.g. archive exclusion), rest = initial query
+	local extra="$1"
+	shift
+	local RG_PREFIX="rg --column --line-number --no-heading --color=always --follow --smart-case $extra"
+	local INITIAL_QUERY="${*:-}"
+	local selected
+	IFS=: read -ra selected < <(
+		FZF_DEFAULT_COMMAND="$RG_PREFIX $(printf %q "$INITIAL_QUERY") $(printf %q "$KB")" \
+			fzf --ansi \
+			--color "hl:-1:underline,hl+:-1:underline:reverse" \
+			--disabled --query "$INITIAL_QUERY" \
+			--bind "change:reload:sleep 0.1; $RG_PREFIX {q} $(printf %q "$KB") || true" \
+			--prompt "Kb> " \
+			--delimiter : \
+			--info inline \
+			--height 50% \
+			--layout reverse \
+			--preview 'bat {1} --highlight-line {2}' \
+			--preview-window 'right,50%,+{2}+4/4,~4'
+	) || true
+	if [ -n "${selected[0]:-}" ]; then
+		"${EDITOR:-nvim}" "${selected[0]}" "+${selected[1]}"
+	fi
+}
+
+cmd="${1:-}"
+shift || true
+
+case "$cmd" in
+in)
+	[[ $# -gt 0 ]] || usage
+	nvim "$KB/inbox/$(date +%Y%m%d%H%M)-$(slug "$*").md"
+	;;
+new)
+	[[ $# -gt 0 ]] || usage
+	nvim "$KB/notes/$(date +%Y%m%d%H%M)-$(slug "$*").md"
+	;;
+mom)
+	[[ $# -gt 0 ]] || usage
+	nvim "$KB/mom/$(date +%Y%m%d)-$(slug "$*").md"
+	;;
+find)
+	livegrep "--glob=!archive/*" "$@"
+	;;
+findall)
+	livegrep "" "$@"
+	;;
+inbox)
+	ls -1t "$KB/inbox"
+	;;
+links)
+	[[ $# -gt 0 ]] || usage
+	rg -l "$1" "$KB/notes" --glob '!*'"$1"'*' || echo "no backlinks for $1"
+	;;
+todo)
+	nvim "$KB/todo.md"
+	;;
+t)
+	[[ $# -gt 0 ]] || usage
+	echo "- [ ] $*" >>"$KB/todo.md"
+	;;
+*)
+	usage
+	;;
+esac
