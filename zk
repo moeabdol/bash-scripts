@@ -1,36 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 # zk — plain-markdown zettelkasten in ~/Dropbox/zk
 # The three standard note types, one directory each:
 #   $ZK/inbox/     fleeting notes — quick captures, unprocessed, always emptied
 #   $ZK/sources/   literature notes — one file per book/course/podcast, location-anchored
 #   $ZK/notes/     permanent notes — atomic claims, ID-prefixed, linked via [[id]]
-
 ZK="${ZK_DIR:-$HOME/Dropbox/zk}"
-
 slug() {
 	# lowercase ASCII, spaces/slashes -> dashes; Arabic and other UTF-8 pass through
 	echo "$*" | tr '[:upper:]' '[:lower:]' | tr -s ' /' '-' | sed 's/^-//; s/-$//'
 }
-
 usage() {
 	cat <<EOF
 Usage: zk <command> [args]
-
   in <title words>     capture fleeting note to inbox/
   new <title words>    create permanent note in notes/
   src <title words>    open literature note in sources/ (same title = same file)
   find [query]         live-grep the zk, open at match
+                       (Tab marks multiple; C-y copies [[id]] links, C-o names)
   inbox                list unprocessed inbox files (oldest first)
   links <id>           notes linking TO the given note id (backlinks)
 EOF
 	exit 1
 }
-
 cmd="${1:-}"
 shift || true
-
 case "$cmd" in
 in)
 	[[ $# -gt 0 ]] || usage
@@ -48,21 +42,27 @@ find)
 	RG_PREFIX="rg --column --line-number --no-heading --color=always --follow --smart-case"
 	INITIAL_QUERY="${*:-}"
 	IFS=: read -ra selected < <(
-		FZF_DEFAULT_COMMAND="$RG_PREFIX $(printf %q "$INITIAL_QUERY") $(printf %q "$ZK")" \
-			fzf --ansi \
-			--color "hl:-1:underline,hl+:-1:underline:reverse" \
-			--disabled --query "$INITIAL_QUERY" \
-			--bind "change:reload:sleep 0.1; $RG_PREFIX {q} $(printf %q "$ZK") || true" \
-			--prompt "zk> " \
-			--delimiter : \
-			--info inline \
-			--height 50% \
-			--layout reverse \
-			--preview 'bat {1} --highlight-line {2}' \
-			--preview-window 'right,50%,+{2}+4/4,~4'
+		cd "$ZK" &&
+			FZF_DEFAULT_COMMAND="$RG_PREFIX $(printf %q "$INITIAL_QUERY")" \
+				fzf --ansi \
+				--color "hl:-1:underline,hl+:-1:underline:reverse" \
+				--disabled --query "$INITIAL_QUERY" \
+				--bind "change:reload:sleep 0.1; $RG_PREFIX {q} || true" \
+				--multi \
+				--bind 'tab:toggle+down' \
+				--bind 'ctrl-y:execute-silent(cut -d: -f1 {+f} | sort -u | xargs -I° basename ° .md | cut -d- -f1 | paste -sd" " - | sed "s/[^ ]*/[[&]]/g" | tr -d "\n" | xclip -selection clipboard)+transform-header(echo copied links)' \
+				--bind 'ctrl-o:execute-silent(cut -d: -f1 {+f} | sort -u | xargs -I° basename ° .md | paste -sd" " - | tr -d "\n" | xclip -selection clipboard)+transform-header(echo copied names)' \
+				--header 'Tab: mark · C-y: copy [[id]] · C-o: copy name · enter: open' \
+				--prompt "Zk> " \
+				--delimiter : \
+				--info inline \
+				--height 50% \
+				--layout reverse \
+				--preview 'bat {1} --highlight-line {2}' \
+				--preview-window 'right,50%,+{2}+4/4,~4'
 	) || true
 	if [ -n "${selected[0]:-}" ]; then
-		"${EDITOR:-nvim}" "${selected[0]}" "+${selected[1]}"
+		cd "$ZK" && "${EDITOR:-nvim}" "${selected[0]}" "+${selected[1]}"
 	fi
 	;;
 inbox)
