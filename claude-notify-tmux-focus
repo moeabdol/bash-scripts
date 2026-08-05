@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+#
+# claude-notify-tmux-focus — Claude Code hook helper
+#
+# Shows a dunst notification; if clicked within 5s, jumps to the exact
+# tmux pane that fired it: right i3 window/monitor (via xdotool pid ->
+# X window id), right tmux client, right session, window, and pane.
+#
+# usage: claude-notify-tmux-focus <pane-id> <message> [urgency]
+#   pane-id  tmux pane id, pass "$TMUX_PANE" from the hook (e.g. %5)
+#   message  notification body text
+#   urgency  low | normal | critical   (default: normal)
+#
+# requires: dunst (mouse_left_click = do_action, close_current), xdotool
+# Called from ~/.claude/settings.json hooks with "async": true.
+
+set -u
+
+target="${1:?usage: claude-notify-tmux-focus <pane-id> <message> [urgency]}"
+msg="${2:?usage: claude-notify-tmux-focus <pane-id> <message> [urgency]}"
+urgency="${3:-normal}"
+
+# ---------------------------------------------------------------------------
+# 1. Notify and wait for click (blocks up to 5s; hook must run async)
+# ---------------------------------------------------------------------------
+action=$(notify-send -u "$urgency" -t 5000 -A default="Focus" \
+	"Claude Code" "$msg")
+
+# Expired or dismissed without action -> nothing to do
+[[ ${action:-} == default ]] || exit 0
+
+# ---------------------------------------------------------------------------
+# 2. Resolve the session that owns the target pane
+# ---------------------------------------------------------------------------
+session=$(tmux display -p -t "$target" '#{session_name}' 2>/dev/null)
+
+# Pane no longer exists (window closed since the notification fired)
+[[ -n $session ]] || exit 0
+
+# ---------------------------------------------------------------------------
+# 3. Pick the tmux client to drive:
+#    prefer one already attached to that session, else fall back to any.
+# ---------------------------------------------------------------------------
+client=$(tmux list-clients -F '#{client_tty} #{session_name}' |
+	awk -v s="$session" '$2 == s {print $1; exit}')
+
+if [[ -z $client ]]; then
+	client=$(tmux list-clients -F '#{client_tty}' | head -n1)
+fi
+
+# No clients attached at all -> nowhere to jump
+[[ -n $client ]] || exit 0
+
+# ---------------------------------------------------------------------------
+# 4. Focus the i3 window hosting that tmux client.
+#    Oldest process on the client tty = shell; its parent = the terminal
+#    (Alacritty); xdotool maps pid -> X window id; i3 focuses by id,
+#    across workspaces and monitors. No urgency hints involved.
+# ---------------------------------------------------------------------------
+tty_dev="${client#/dev/}"
+shell_pid=$(ps -t "$tty_dev" -o pid= --sort=start_time | head -n1 | tr -d ' ')
+if [[ -n ${shell_pid:-} ]]; then
+	term_pid=$(ps -o ppid= -p "$shell_pid" | tr -d ' ')
+	wid=$(xdotool search --pid "$term_pid" 2>/dev/null | head -n1)
+	[[ -n ${wid:-} ]] && i3-msg "[id=$wid] focus" >/dev/null 2>&1
+fi
+
+# ---------------------------------------------------------------------------
+# 5. Point that client at the exact session / window / pane
+# ---------------------------------------------------------------------------
+tmux switch-client -c "$client" -t "$session"
+tmux select-window -t "$target"
+tmux select-pane -t "$target"
