@@ -1,16 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-sel=$(buku -p -f 4 | awk -F'\t' '{
+out=$(buku -p -f 4 | awk -F'\t' '{
     t=$4; gsub(/,[ ]*/, " #", t);
-    title=$3; if (length(title) > 78) title = substr(title, 1, 75) "...";
-    printf "%s\t%s\t%-78s\t#%s\n", $1, $2, title, t
+    title=$3; if (length(title) > 150) title = substr(title, 1, 147) "...";
+    printf "%s\t%s\t%-150s\t#%s\n", $1, $2, title, t
 }' | fzf --multi --exact --delimiter '\t' \
-    --with-nth 3,4 \
-    --preview 'printf "Title: %s\nTags:  %s\nURL:   %s\n" {3} {4} {2}' \
-    --preview-window=down,3,wrap) || exit 0
+	--with-nth 3,4 \
+	--expect=ctrl-c \
+	--preview 'printf "Title: %s\nTags:  %s\nURL:   %s\n" {3} {4} {2}' \
+	--preview-window=down,3,wrap \
+	--header 'enter: open in browser | ctrl-c: copy url(s)') || exit 0
 
+key=$(head -1 <<<"$out")
+sel=$(tail -n +2 <<<"$out")
 [[ -z $sel ]] && exit 0
 
-# shellcheck disable=SC2046  -- word-splitting of ids is intentional
-buku -o $(awk -F'\t' '{print $1}' <<< "$sel")
+if [[ $key == ctrl-c ]]; then
+	awk -F'\t' '{print $2}' <<<"$sel" | xclip -selection clipboard
+	echo "copied $(wc -l <<<"$sel") url(s)"
+else
+	# shellcheck disable=SC2046
+	buku -o $(awk -F'\t' '{print $1}' <<<"$sel")
+fi
